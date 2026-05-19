@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Liquid Expense Tracker</title>
   
-  <!-- Tailwind CSS -->
+ 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -24,11 +24,11 @@
 
   <style>
     body { background-color: #000000; color: #ffffff; margin: 0; padding: 0; }
-    /* Hide scrollbar for Chrome, Safari and Opera */
+    
     .hide-scrollbar::-webkit-scrollbar { display: none; }
-    /* Hide scrollbar for IE, Edge and Firefox */
+   
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    /* Fade In Animation */
+    
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
   </style>
@@ -68,10 +68,7 @@
       getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, updateDoc, addDoc
     } from 'firebase/firestore';
 
-    //    // =========================================================================
-    // 🛑 IMPORTANT: REPLACE THESE WITH YOUR FIREBASE PROJECT KEYS 🛑
-    // Go to console.firebase.google.com -> Project Settings -> Web App
-    // =========================================================================
+  
     const firebaseConfig = {
       apiKey: "AIzaSyAFcVpBt3e4sX_NbwzSFmdw2DzAYDlTSpY",
       authDomain: "spendly-2ddbb.firebaseapp.com",
@@ -81,13 +78,13 @@
       appId: "1:1026678550362:web:a7216ecdfcb12c08ffcd63"
     };
 
-    // Note: If keys are missing, the app will try to run, but backend calls will fail.
+   
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const appId = 'liquid-expense-tracker';
 
-    //    const DEFAULT_CATEGORIES = [
+    
       { name: 'Food & Dining', icon: '🍔', color: 'bg-orange-500', type: 'expense' },
       { name: 'Transport', icon: '🚗', color: 'bg-blue-500', type: 'expense' },
       { name: 'Shopping', icon: '🛍️', color: 'bg-pink-500', type: 'expense' },
@@ -110,7 +107,7 @@
       return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
     };
 
-    //    const GlassCard = ({ children, className = '', onClick }) => (
+    
       <div 
         onClick={onClick}
         className={`bg-[#1c1c1e]/70 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] rounded-3xl p-5 transition-all ${onClick ? 'cursor-pointer active:scale-95 hover:bg-[#2c2c2e]/70' : ''} ${className}`}
@@ -149,7 +146,7 @@
       );
     };
 
-    //    function App() {
+   
       const [user, setUser] = useState(null);
       const [authLoading, setAuthLoading] = useState(true);
       const [currentView, setCurrentView] = useState('home'); 
@@ -170,7 +167,7 @@
         return () => unsubscribe();
       }, []);
 
-      //      useEffect(() => {
+     
         if (!user) {
           setTransactions([]);
           setAccounts([]);
@@ -269,7 +266,7 @@
 
       const displayName = user.displayName || 'User';
 
-      //      return (
+     
         <div className="min-h-screen bg-black text-gray-200 font-sans pb-32 overflow-x-hidden relative selection:bg-blue-500/30">
           
           <div className="fixed top-0 left-0 w-80 h-80 bg-blue-600/10 rounded-full filter blur-[100px] opacity-70 -z-0 pointer-events-none"></div>
@@ -345,7 +342,7 @@
       </div>
     );
 
-    //    function HomeView({ transactions, accounts, categories, onEdit, user }) {
+    
       const [filterType, setFilterType] = useState('month'); 
       const [monthStr, setMonthStr] = useState(new Date().toISOString().slice(0, 7));
       const [singleDate, setSingleDate] = useState(new Date().toISOString().slice(0, 10));
@@ -579,7 +576,7 @@
       );
     }
 
-    //    function AnalyticsView({ transactions, categories, user }) {
+   
       const analyticsData = useMemo(() => {
         const now = new Date();
         const currentMonth = now.getMonth();
@@ -728,7 +725,7 @@
       );
     }
 
-    //    function AddTransactionView({ user, accounts, categories, knownPersons, onSave, onCancel, editData }) {
+ 
       const [type, setType] = useState(editData ? (editData.type || 'expense') : 'expense');
       const [amount, setAmount] = useState(editData ? editData.amount : '');
       const [categoryId, setCategoryId] = useState(editData ? editData.categoryId : '');
@@ -988,7 +985,7 @@
       );
     }
 
-    //    function SplitsView({ user, transactions }) {
+  
       const [selectedPerson, setSelectedPerson] = useState(null);
 
       const balances = useMemo(() => {
@@ -1121,7 +1118,7 @@
       );
     }
 
-    //    function ProfileView({ user, accounts, categories, profilePhoto, handlePhotoUpload, updateUserName }) {
+  
       const [newAccName, setNewAccName] = useState('');
       const [newAccBalance, setNewAccBalance] = useState('');
       const [newCatName, setNewCatName] = useState('');
@@ -1308,7 +1305,7 @@
       );
     }
 
-    //    function AuthScreen({ setUser }) {
+   
       const [isLogin, setIsLogin] = useState(true);
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
@@ -1399,7 +1396,7 @@
       );
     }
 
-    //    const root = createRoot(document.getElementById('root'));
+ 
     root.render(<App />);
   </script>
 </body>
