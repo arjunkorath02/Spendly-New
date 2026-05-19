@@ -2,44 +2,71 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Liquid Expense Tracker</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            appBg: '#000000',
+            glassBg: 'rgba(28, 28, 30, 0.7)',
+            glassBorder: 'rgba(255, 255, 255, 0.1)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #000000; color: #ffffff; margin: 0; padding: 0; }
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Fade In Animation */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react",
+        "firebase/app": "https://esm.sh/firebase@10.8.1/app",
+        "firebase/auth": "https://esm.sh/firebase@10.8.1/auth",
+        "firebase/firestore": "https://esm.sh/firebase@10.8.1/firestore"
+      }
+    }
+  </script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-black text-white min-h-screen">
+<body>
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect } from 'react';
+    import React, { useState, useEffect, useMemo } from 'react';
     import { createRoot } from 'react-dom/client';
-    
-    
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
-    import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
-
-    const firebaseConfig = {
-      <!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liquid Expense Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-black text-white min-h-screen">
-  <div id="root"></div>
-
-  <script type="text/babel" data-type="module">
-    import React, { useState, useEffect } from 'react';
-    import { createRoot } from 'react-dom/client';
-    
-   
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
-    import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+    import { 
+      Home, PieChart, Plus, Users, Settings, 
+      CreditCard, ChevronRight, CheckCircle2, 
+      Upload, X, Edit2, Wallet, LogOut, TrendingUp, 
+      ArrowDownRight, ArrowUpRight, BarChart2, TrendingDown, Filter, Check, Calendar
+    } from 'lucide-react';
+    import { initializeApp } from 'firebase/app';
+    import { 
+      getAuth, onAuthStateChanged,
+      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile
+    } from 'firebase/auth';
+    import { 
+      getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, updateDoc, addDoc
+    } from 'firebase/firestore';
 
    
     const firebaseConfig = {
@@ -51,130 +78,1325 @@
       appId: "1:1026678550362:web:a7216ecdfcb12c08ffcd63"
     };
 
-    
+    // Note: If keys are missing, the app will try to run, but backend calls will fail.
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const appId = 'liquid-expense-tracker';
+    const appId = 'Spendly';
 
-    function App() {
-      const [user, setUser] = useState(null);
-      const [loading, setLoading] = useState(true);
+    //    const DEFAULT_CATEGORIES = [
+      { name: 'Food & Dining', icon: '🍔', color: 'bg-orange-500', type: 'expense' },
+      { name: 'Transport', icon: '🚗', color: 'bg-blue-500', type: 'expense' },
+      { name: 'Shopping', icon: '🛍️', color: 'bg-pink-500', type: 'expense' },
+      { name: 'Utilities', icon: '⚡', color: 'bg-yellow-500', type: 'expense' },
+      { name: 'Entertainment', icon: '🎬', color: 'bg-purple-500', type: 'expense' },
+      { name: 'Health', icon: '💊', color: 'bg-green-500', type: 'expense' },
+      { name: 'Investment', icon: '📈', color: 'bg-indigo-500', type: 'expense' },
+      { name: 'Salary', icon: '💰', color: 'bg-emerald-500', type: 'income' },
+      { name: 'Returns', icon: '💸', color: 'bg-teal-500', type: 'income' },
+      { name: 'Other', icon: '📦', color: 'bg-gray-500', type: 'expense' }
+    ];
 
-      useEffect(() => {
-        const unsub = onAuthStateChanged(auth, (u) => {
-          setUser(u);
-          setLoading(false);
-        });
-        return unsub;
-      }, []);
-
-      if (loading) return <div className="p-10 text-center">Loading...</div>;
-      if (!user) return <AuthScreen setUser={setUser} />;
-
-      return (
-        <div className="p-6 max-w-lg mx-auto">
-          <h1 className="text-3xl font-black mb-4">Dashboard</h1>
-          <p>Logged in as: {user.email}</p>
-          <button className="mt-4 bg-red-600 px-4 py-2 rounded-xl" onClick={() => auth.signOut()}>Logout</button>
-        </div>
-      );
-    }
-
-    function AuthScreen({ setUser }) {
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [isLogin, setIsLogin] = useState(true);
-
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-          if (isLogin) {
-            await signInWithEmailAndPassword(auth, email, password);
-          } else {
-            await createUserWithEmailAndPassword(auth, email, password);
-          }
-        } catch (err) { alert(err.message); }
-      };
-
-      return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 bg-[#1c1c1e] p-8 rounded-3xl">
-            <h2 className="text-2xl font-bold text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
-            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
-            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-            <button className="w-full bg-blue-600 p-3 rounded-xl font-bold">{isLogin ? 'Sign In' : 'Sign Up'}</button>
-          </form>
-        </div>
-      );
-    }
-
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
     };
 
-    // 2. Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = 'liquid-expense-tracker';
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+    };
 
-    function App() {
+    //    const GlassCard = ({ children, className = '', onClick }) => (
+      <div 
+        onClick={onClick}
+        className={`bg-[#1c1c1e]/70 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] rounded-3xl p-5 transition-all ${onClick ? 'cursor-pointer active:scale-95 hover:bg-[#2c2c2e]/70' : ''} ${className}`}
+      >
+        {children}
+      </div>
+    );
+
+    const GlassInput = ({ className = '', ...props }) => (
+      <input 
+        className={`w-full bg-[#2c2c2e]/60 backdrop-blur-md border border-white/10 shadow-inner rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-[#3a3a3c]/80 transition-all ${className}`}
+        {...props}
+      />
+    );
+
+    const GlassSelect = ({ className = '', children, ...props }) => (
+      <select 
+        className={`w-full bg-[#2c2c2e]/60 backdrop-blur-md border border-white/10 shadow-inner rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-[#3a3a3c]/80 transition-all appearance-none ${className}`}
+        {...props}
+      >
+        {children}
+      </select>
+    );
+
+    const GlassButton = ({ children, className = '', variant = 'primary', ...props }) => {
+      const base = "w-full font-semibold rounded-2xl px-4 py-3 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2";
+      const variants = {
+        primary: "bg-blue-600 text-white hover:bg-blue-500 border border-blue-500/50",
+        secondary: "bg-[#2c2c2e]/80 text-white border border-white/10 hover:bg-[#3a3a3c]",
+        danger: "bg-red-500/20 text-red-500 hover:bg-red-500/30 border border-red-500/30"
+      };
+      return (
+        <button className={`${base} ${variants[variant]} ${className}`} {...props}>
+          {children}
+        </button>
+      );
+    };
+
+    //    function App() {
       const [user, setUser] = useState(null);
-      const [loading, setLoading] = useState(true);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [currentView, setCurrentView] = useState('home'); 
+      
+      const [transactions, setTransactions] = useState([]);
+      const [accounts, setAccounts] = useState([]);
+      const [categories, setCategories] = useState([]);
+      const [profilePhoto, setProfilePhoto] = useState('');
+      const [knownPersons, setKnownPersons] = useState([]);
+      const [hasSeeded, setHasSeeded] = useState(false);
+      const [editingTransaction, setEditingTransaction] = useState(null);
 
       useEffect(() => {
-        const unsub = onAuthStateChanged(auth, (u) => {
+        const unsubscribe = onAuthStateChanged(auth, (u) => {
           setUser(u);
-          setLoading(false);
+          setAuthLoading(false);
         });
-        return unsub;
+        return () => unsubscribe();
       }, []);
 
-      if (loading) return <div className="p-10 text-center">Loading...</div>;
-      if (!user) return <AuthScreen setUser={setUser} />;
+      //      useEffect(() => {
+        if (!user) {
+          setTransactions([]);
+          setAccounts([]);
+          setCategories([]);
+          return;
+        }
 
-      return (
-        <div className="p-6 max-w-lg mx-auto">
-          <h1 className="text-3xl font-black mb-4">Dashboard</h1>
-          <p>Logged in as: {user.email}</p>
-          <button className="mt-4 bg-red-600 px-4 py-2 rounded-xl" onClick={() => auth.signOut()}>Logout</button>
+        const txRef = collection(db, 'artifacts', appId, 'users', user.uid, 'transactions');
+        const accountsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'accounts');
+        const categoriesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'categories');
+        const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+
+        const unsubTx = onSnapshot(txRef, (snap) => {
+          const txs = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+          setTransactions(txs.sort((a, b) => new Date(b.date) - new Date(a.date)));
+          
+          const persons = new Set();
+          txs.forEach(t => {
+            t.splits?.forEach(s => {
+              if (s.name !== 'Me') persons.add(s.name);
+            });
+          });
+          setKnownPersons(Array.from(persons));
+        }, console.error);
+
+        const unsubAccounts = onSnapshot(accountsRef, (snap) => {
+          setAccounts(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+        }, console.error);
+
+        const unsubCategories = onSnapshot(categoriesRef, (snap) => {
+          if (snap.empty && !hasSeeded) {
+            setHasSeeded(true);
+            DEFAULT_CATEGORIES.forEach(async c => {
+              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'categories'), c);
+            });
+          } else {
+            setCategories(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+          }
+        }, console.error);
+
+        const unsubProfile = onSnapshot(profileRef, (docSnap) => {
+          if (docSnap.exists() && docSnap.data().photoURL) {
+            setProfilePhoto(docSnap.data().photoURL);
+          }
+        }, console.error);
+
+        return () => { unsubTx(); unsubAccounts(); unsubCategories(); unsubProfile(); };
+      }, [user, hasSeeded]);
+
+      const handlePhotoUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 300;
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setProfilePhoto(dataUrl);
+            
+            if (user) {
+              setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), { photoURL: dataUrl }, { merge: true });
+            }
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const updateUserName = async (newName) => {
+        if (!newName.trim() || !user) return;
+        try {
+          await updateProfile(auth.currentUser, { displayName: newName.trim() });
+          setUser({ ...auth.currentUser, displayName: newName.trim() });
+        } catch (err) {
+          alert("Error updating name: " + err.message);
+        }
+      };
+
+      if (authLoading) return <div className="min-h-screen bg-black flex items-center justify-center text-gray-400 font-medium">Loading...</div>;
+
+      if (!user) {
+        return <AuthScreen setUser={setUser} />;
+      }
+
+      const navigate = (view, txToEdit = null) => {
+        setEditingTransaction(txToEdit);
+        setCurrentView(view);
+      };
+
+      const displayName = user.displayName || 'User';
+
+      //      return (
+        <div className="min-h-screen bg-black text-gray-200 font-sans pb-32 overflow-x-hidden relative selection:bg-blue-500/30">
+          
+          <div className="fixed top-0 left-0 w-80 h-80 bg-blue-600/10 rounded-full filter blur-[100px] opacity-70 -z-0 pointer-events-none"></div>
+          <div className="fixed bottom-40 right-0 w-96 h-96 bg-purple-600/10 rounded-full filter blur-[100px] opacity-70 -z-0 pointer-events-none"></div>
+          <div className="fixed top-1/3 left-1/4 w-72 h-72 bg-emerald-500/10 rounded-full filter blur-[100px] opacity-60 -z-0 pointer-events-none"></div>
+
+          <div className="relative z-10 max-w-lg mx-auto w-full min-h-screen flex flex-col p-4 md:p-6">
+            
+            <header className="flex justify-between items-center mb-6 pt-4">
+              <div>
+                <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
+                  {currentView === 'home' && 'Dashboard'}
+                  {currentView === 'add' && (editingTransaction ? 'Edit Entry' : 'New Entry')}
+                  {currentView === 'analytics' && 'Analytics'}
+                  {currentView === 'splits' && 'Receivables'}
+                  {currentView === 'profile' && 'Settings'}
+                </h1>
+                <p className="text-gray-400 font-medium text-sm">Hello, <span className="text-blue-400 font-bold">{displayName}</span> 👋</p>
+              </div>
+            </header>
+
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+              {currentView === 'home' && <HomeView transactions={transactions} accounts={accounts} categories={categories} onEdit={(t) => navigate('add', t)} user={user} />}
+              {currentView === 'add' && <AddTransactionView user={user} accounts={accounts} categories={categories} knownPersons={knownPersons} onSave={() => navigate('home')} onCancel={() => navigate('home')} editData={editingTransaction} />}
+              {currentView === 'analytics' && <AnalyticsView transactions={transactions} categories={categories} user={user}/>}
+              {currentView === 'splits' && <SplitsView user={user} transactions={transactions} />}
+              {currentView === 'profile' && <ProfileView user={user} accounts={accounts} categories={categories} profilePhoto={profilePhoto} handlePhotoUpload={handlePhotoUpload} updateUserName={updateUserName} />}
+            </div>
+
+            <div className="fixed bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-md z-50">
+              <div className="bg-[#1c1c1e]/80 backdrop-blur-3xl border border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.8)] rounded-3xl px-6 py-3 flex justify-between items-center">
+                
+                <div className="flex gap-4">
+                  <NavItem icon={<Home />} label="Home" active={currentView === 'home'} onClick={() => navigate('home')} />
+                  <NavItem icon={<Users />} label="Splits" active={currentView === 'splits'} onClick={() => navigate('splits')} />
+                </div>
+                
+                <div className="relative -top-6 mx-2" onClick={() => navigate('add')}>
+                  <div className={`w-14 h-14 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 text-white cursor-pointer transition-transform hover:scale-105 active:scale-95 border-4 border-[#1c1c1e]`}>
+                    <Plus size={28} strokeWidth={3} />
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <NavItem icon={<BarChart2 />} label="Analytics" active={currentView === 'analytics'} onClick={() => navigate('analytics')} />
+                  <NavItem 
+                    icon={<Settings />} 
+                    imageSrc={profilePhoto}
+                    label="Profile" 
+                    active={currentView === 'profile'} 
+                    onClick={() => navigate('profile')} 
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
 
-    function AuthScreen({ setUser }) {
+    const NavItem = ({ icon, imageSrc, label, active, onClick }) => (
+      <div onClick={onClick} className={`flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors w-12 ${active ? 'text-blue-500' : 'text-gray-500 hover:text-blue-400'}`}>
+        {imageSrc ? (
+          <img 
+            src={imageSrc} 
+            alt={label} 
+            className={`w-6 h-6 rounded-full object-cover transition-all shadow-sm ${active ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#1c1c1e]' : 'opacity-70 border border-gray-600'}`} 
+          />
+        ) : (
+          React.cloneElement(icon, { size: 22, className: active ? 'stroke-[2.5] drop-shadow-sm' : 'stroke-[1.5]' })
+        )}
+        <span className="text-[9px] font-bold tracking-tight mt-0.5">{label}</span>
+      </div>
+    );
+
+    //    function HomeView({ transactions, accounts, categories, onEdit, user }) {
+      const [filterType, setFilterType] = useState('month'); 
+      const [monthStr, setMonthStr] = useState(new Date().toISOString().slice(0, 7));
+      const [singleDate, setSingleDate] = useState(new Date().toISOString().slice(0, 10));
+      const [startDate, setStartDate] = useState('');
+      const [endDate, setEndDate] = useState('');
+      const [selectedAccount, setSelectedAccount] = useState('all');
+      const [showFilters, setShowFilters] = useState(false);
+
+      const filteredTx = useMemo(() => {
+        return transactions.filter(t => {
+          if (selectedAccount !== 'all' && t.accountId !== selectedAccount) return false;
+          const tDate = new Date(t.date);
+          if (filterType === 'month') {
+            return tDate.toISOString().slice(0, 7) === monthStr;
+          } else if (filterType === 'date') {
+            return tDate.toISOString().slice(0, 10) === singleDate;
+          } else if (filterType === 'range') {
+            if (startDate && new Date(t.date) < new Date(startDate)) return false;
+            if (endDate) {
+              const end = new Date(endDate);
+              end.setDate(end.getDate() + 1);
+              if (new Date(t.date) >= end) return false;
+            }
+            return true;
+          }
+          return true;
+        });
+      }, [transactions, filterType, monthStr, singleDate, startDate, endDate, selectedAccount]);
+
+      const totalOpeningBalance = useMemo(() => {
+        return accounts.reduce((sum, acc) => sum + (parseFloat(acc.openingBalance) || 0), 0);
+      }, [accounts]);
+
+      const calculateMyPortion = (txList, typeFilter) => {
+        return txList.filter(t => t.type === typeFilter).reduce((acc, t) => {
+          let myShare = t.amount;
+          if (t.type === 'expense' && t.splits && t.splits.length > 0) {
+            let othersPaid = 0;
+            t.splits.forEach(s => {
+              if (s.name !== 'Me') {
+                othersPaid += (parseFloat(s.paid) || 0);
+              }
+            });
+            myShare = t.amount - othersPaid;
+          }
+          return acc + myShare;
+        }, 0);
+      };
+
+      const totalExpense = calculateMyPortion(filteredTx, 'expense');
+      const totalIncome = calculateMyPortion(filteredTx, 'income');
+      const availableBalance = totalOpeningBalance + totalIncome - totalExpense;
+
+      const predictNextMonth = () => {
+        const currentDate = new Date();
+        const monthlyTotals = {};
+        transactions.filter(t => t.type === 'expense').forEach(t => {
+          const d = new Date(t.date);
+          const key = `${d.getFullYear()}-${d.getMonth()}`;
+          monthlyTotals[key] = (monthlyTotals[key] || 0) + calculateMyPortion([t], 'expense');
+        });
+        
+        const keys = Object.keys(monthlyTotals).sort((a,b) => b.localeCompare(a));
+        const pastKeys = keys.filter(k => k !== `${currentDate.getFullYear()}-${currentDate.getMonth()}`).slice(0, 3);
+        
+        if (pastKeys.length === 0) return 0;
+        const sum = pastKeys.reduce((acc, k) => acc + monthlyTotals[k], 0);
+        return sum / pastKeys.length;
+      };
+
+      const predictedSpend = predictNextMonth();
+
+      const catBreakdown = filteredTx.filter(t => t.type === 'expense').reduce((acc, t) => {
+        let myShare = t.amount;
+        if (t.splits && t.splits.length > 0) {
+          let othersPaid = 0;
+          t.splits.forEach(s => {
+            if (s.name !== 'Me') {
+              othersPaid += (parseFloat(s.paid) || 0);
+            }
+          });
+          myShare = t.amount - othersPaid;
+        }
+        acc[t.categoryId] = (acc[t.categoryId] || 0) + myShare;
+        return acc;
+      }, {});
+
+      const maxCatVal = Math.max(...Object.values(catBreakdown), 1);
+
+      return (
+        <div className="space-y-6">
+          <GlassCard className="!p-4 space-y-4">
+            <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowFilters(!showFilters)}>
+              <span className="font-extrabold text-white flex items-center gap-2">
+                <Filter size={18} className="text-blue-400"/> 
+                {filterType === 'month' ? 'Monthly View' : filterType === 'date' ? 'Daily View' : 'Custom Range'}
+              </span>
+              <ChevronRight className={`text-gray-500 transition-transform ${showFilters ? 'rotate-90' : ''}`} />
+            </div>
+            
+            {showFilters && (
+              <div className="pt-2 space-y-4 border-t border-white/5 animate-fade-in">
+                <div className="flex bg-[#2c2c2e]/50 backdrop-blur-sm p-1 rounded-2xl shadow-inner border border-white/5">
+                  <button onClick={() => setFilterType('month')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterType==='month'?'bg-[#3a3a3c] shadow-sm text-white':'text-gray-400'}`}>Month</button>
+                  <button onClick={() => setFilterType('date')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterType==='date'?'bg-[#3a3a3c] shadow-sm text-white':'text-gray-400'}`}>Date</button>
+                  <button onClick={() => setFilterType('range')} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${filterType==='range'?'bg-[#3a3a3c] shadow-sm text-white':'text-gray-400'}`}>Range</button>
+                </div>
+
+                {filterType === 'month' && <GlassInput type="month" value={monthStr} onChange={(e) => setMonthStr(e.target.value)} />}
+                {filterType === 'date' && <GlassInput type="date" value={singleDate} onChange={(e) => setSingleDate(e.target.value)} />}
+                {filterType === 'range' && (
+                  <div className="flex gap-2">
+                    <GlassInput type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="From" />
+                    <GlassInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="To" />
+                  </div>
+                )}
+
+                <GlassSelect value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)}>
+                  <option value="all">All Accounts</option>
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </GlassSelect>
+              </div>
+            )}
+          </GlassCard>
+
+          <GlassCard className="text-center relative overflow-hidden">
+            <h2 className="text-gray-400 font-bold mb-1 text-xs uppercase tracking-widest">Available Balance</h2>
+            <div className={`text-5xl font-black tracking-tight mb-6 drop-shadow-md ${availableBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
+              {formatCurrency(availableBalance)}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#2c2c2e]/50 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col items-center">
+                <div className="flex items-center gap-1 text-emerald-400 mb-1">
+                  <ArrowDownRight size={16} strokeWidth={3} /> <span className="text-[10px] font-extrabold uppercase tracking-wider">Income</span>
+                </div>
+                <span className="font-black text-white text-lg">{formatCurrency(totalIncome)}</span>
+              </div>
+              <div className="bg-[#2c2c2e]/50 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col items-center">
+                <div className="flex items-center gap-1 text-red-400 mb-1">
+                  <ArrowUpRight size={16} strokeWidth={3} /> <span className="text-[10px] font-extrabold uppercase tracking-wider">Expense</span>
+                </div>
+                <span className="font-black text-white text-lg">{formatCurrency(totalExpense)}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-between items-center bg-blue-500/20 rounded-2xl p-4 border border-blue-500/30">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="text-blue-400" size={20} />
+                <div className="text-left">
+                  <p className="text-[10px] text-blue-300/80 font-extrabold uppercase tracking-wider">Predicted Expense</p>
+                  <p className="font-black text-blue-100 text-sm">{predictedSpend > 0 ? formatCurrency(predictedSpend) : 'Gathering Data...'}</p>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-extrabold text-lg text-white">Expense Breakdown</h3>
+              <PieChart size={20} className="text-gray-500" />
+            </div>
+            <div className="space-y-4">
+              {Object.keys(catBreakdown).length > 0 ? (
+                Object.entries(catBreakdown).map(([catId, val]) => {
+                  const c = categories.find(cat => cat.id === catId) || { name: 'Unknown', icon: '📦', color: 'bg-gray-500' };
+                  const percent = (val / maxCatVal) * 100;
+                  return (
+                    <div key={catId}>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="font-bold text-gray-200 flex items-center gap-2">
+                          <span className={`w-6 h-6 rounded-full ${c.color} flex items-center justify-center text-[10px] text-white shadow-sm`}>{c.icon}</span>
+                          {c.name}
+                        </span>
+                        <span className="font-black text-white">{formatCurrency(val)}</span>
+                      </div>
+                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden shadow-inner">
+                        <div className={`h-full ${c.color} rounded-full`} style={{ width: `${percent}%` }}></div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-center text-gray-500 font-medium text-sm py-4">No expenses found for this filter.</p>
+              )}
+            </div>
+          </GlassCard>
+          
+          <div>
+            <h3 className="font-extrabold text-lg text-white mb-3 ml-2 flex justify-between items-center">
+              Records <span className="text-xs text-gray-400 font-bold bg-white/10 px-2 py-1 rounded-lg">{filteredTx.length} items</span>
+            </h3>
+            <div className="space-y-3">
+              {filteredTx.map(t => (
+                <TransactionRow key={t.id} tx={t} accounts={accounts} categories={categories} onClick={() => onEdit(t)} user={user} />
+              ))}
+              {filteredTx.length === 0 && <p className="text-gray-500 font-medium text-sm ml-2">No transactions match your filter.</p>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function TransactionRow({ tx, accounts, categories, onClick, user }) {
+      const category = categories.find(c => c.id === tx.categoryId) || { name: 'Unknown', icon: '📦', color: 'bg-gray-500' };
+      const account = accounts.find(a => a.id === tx.accountId);
+      const isIncome = tx.type === 'income';
+
+      return (
+        <GlassCard className="!p-4 flex items-center justify-between !rounded-2xl hover:bg-[#2c2c2e]" onClick={onClick}>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl ${category.color} flex items-center justify-center text-xl text-white shadow-md`}>
+              {category.icon}
+            </div>
+            <div>
+              <h4 className="font-extrabold text-white">{tx.note || category.name}</h4>
+              <p className="text-xs text-gray-400 font-semibold">
+                {formatDate(tx.date)} {account ? `• ${account.name}` : ''}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className={`font-black text-lg ${isIncome ? 'text-emerald-400' : 'text-white'}`}>
+              {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+            </div>
+            {tx.splits && tx.splits.length > 1 && !isIncome && (
+              <div className="text-[9px] font-extrabold text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded-md inline-block mt-1 border border-blue-500/30 uppercase tracking-wider">Split</div>
+            )}
+          </div>
+        </GlassCard>
+      );
+    }
+
+    //    function AnalyticsView({ transactions, categories, user }) {
+      const analyticsData = useMemo(() => {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
+        const lastMonth = lastMonthDate.getMonth();
+        const lastMonthYear = lastMonthDate.getFullYear();
+
+        const getMonthData = (m, y) => {
+          const txs = transactions.filter(t => {
+            const d = new Date(t.date);
+            return d.getMonth() === m && d.getFullYear() === y;
+          });
+          
+          let inc = 0, exp = 0, inv = 0;
+          txs.forEach(t => {
+            let myShare = t.amount;
+            if (t.type === 'expense' && t.splits?.length > 0) {
+              let othersPaid = 0;
+              t.splits.forEach(s => {
+                if (s.name !== 'Me') {
+                  othersPaid += (parseFloat(s.paid) || 0);
+                }
+              });
+              myShare = t.amount - othersPaid;
+            }
+
+            if (t.type === 'income') {
+              inc += myShare;
+            } else {
+              exp += myShare;
+              const cat = categories.find(c => c.id === t.categoryId);
+              if (cat && cat.name.toLowerCase().includes('invest')) {
+                inv += myShare;
+              }
+            }
+          });
+          return { income: inc, expense: exp, savings: inc - exp, investment: inv };
+        };
+
+        const thisMonth = getMonthData(currentMonth, currentYear);
+        const lastMonthData = getMonthData(lastMonth, lastMonthYear);
+        
+        let totalInvestmentAllTime = 0;
+        transactions.forEach(t => {
+          if(t.type === 'expense') {
+            const cat = categories.find(c => c.id === t.categoryId);
+            if (cat && cat.name.toLowerCase().includes('invest')) {
+              let myShare = t.amount;
+              if (t.splits?.length > 0) {
+                let othersPaid = 0;
+                t.splits.forEach(s => {
+                  if (s.name !== 'Me') {
+                    othersPaid += (parseFloat(s.paid) || 0);
+                  }
+                });
+                myShare = t.amount - othersPaid;
+              }
+              totalInvestmentAllTime += myShare;
+            }
+          }
+        });
+
+        return { thisMonth, lastMonthData, totalInvestmentAllTime };
+      }, [transactions, categories]);
+
+      const { thisMonth, lastMonthData, totalInvestmentAllTime } = analyticsData;
+      const savingsDiff = thisMonth.savings - lastMonthData.savings;
+      
+      const savingsGrowth = lastMonthData.savings 
+        ? (savingsDiff / Math.abs(lastMonthData.savings)) * 100 
+        : (thisMonth.savings > 0 ? 100 : 0);
+
+      const isGrowthPositive = savingsGrowth >= 0;
+
+      return (
+        <div className="space-y-6">
+          <GlassCard className="relative overflow-hidden">
+            <h3 className="font-extrabold text-white text-lg mb-1">Total Savings</h3>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">This Month</p>
+            
+            <div className="flex items-end gap-4">
+              <div className={`text-4xl font-black ${thisMonth.savings >= 0 ? 'text-white' : 'text-red-400'}`}>
+                {formatCurrency(thisMonth.savings)}
+              </div>
+            </div>
+
+            <div className="mt-5 pt-5 border-t border-white/10">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-400">vs Last Month</span>
+                <div className={`flex items-center gap-1 font-black px-2 py-1 rounded-lg text-sm ${isGrowthPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {isGrowthPositive ? <TrendingUp size={16} strokeWidth={3}/> : <TrendingDown size={16} strokeWidth={3}/>}
+                  {Math.abs(savingsGrowth).toFixed(1)}%
+                </div>
+              </div>
+              <p className="text-xs font-semibold text-gray-500 mt-1">
+                ({savingsDiff >= 0 ? '+' : ''}{formatCurrency(savingsDiff)})
+              </p>
+            </div>
+          </GlassCard>
+
+          <div className="grid grid-cols-2 gap-4">
+            <GlassCard className="!p-4 flex flex-col justify-center">
+              <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 mb-3 border border-indigo-500/30">
+                <BarChart2 size={20} strokeWidth={3}/>
+              </div>
+              <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Total Investment</h4>
+              <span className="font-black text-white text-lg">{formatCurrency(totalInvestmentAllTime)}</span>
+            </GlassCard>
+            
+            <GlassCard className="!p-4 flex flex-col justify-center">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 mb-3 border border-blue-500/30">
+                <TrendingUp size={20} strokeWidth={3}/>
+              </div>
+              <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Inv. This Month</h4>
+              <span className="font-black text-white text-lg">{formatCurrency(thisMonth.investment)}</span>
+            </GlassCard>
+          </div>
+
+          <GlassCard>
+            <h3 className="font-extrabold text-white mb-4">Cashflow Breakdown</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="font-bold text-gray-300">Income</span>
+                  <span className="font-black text-emerald-400">{formatCurrency(thisMonth.income)}</span>
+                </div>
+                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden shadow-inner">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min((thisMonth.income / (Math.max(thisMonth.income + thisMonth.expense, 1))) * 100, 100)}%` }}></div>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-sm mb-1.5">
+                  <span className="font-bold text-gray-300">Expense</span>
+                  <span className="font-black text-red-400">{formatCurrency(thisMonth.expense)}</span>
+                </div>
+                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden shadow-inner">
+                  <div className="h-full bg-red-500 rounded-full" style={{ width: `${Math.min((thisMonth.expense / (Math.max(thisMonth.income + thisMonth.expense, 1))) * 100, 100)}%` }}></div>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      );
+    }
+
+    //    function AddTransactionView({ user, accounts, categories, knownPersons, onSave, onCancel, editData }) {
+      const [type, setType] = useState(editData ? (editData.type || 'expense') : 'expense');
+      const [amount, setAmount] = useState(editData ? editData.amount : '');
+      const [categoryId, setCategoryId] = useState(editData ? editData.categoryId : '');
+      const [accountId, setAccountId] = useState(editData ? editData.accountId : (accounts[0]?.id || ''));
+      const [date, setDate] = useState(editData ? editData.date.slice(0, 16) : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+      const [note, setNote] = useState(editData ? editData.note : '');
+      
+      const [splits, setSplits] = useState(editData && editData.splits && editData.splits.length > 0 ? editData.splits : [{ name: 'Me', amount: '', locked: false, paid: 0 }]);
+      const [newPersonName, setNewPersonName] = useState('');
+      const [error, setError] = useState('');
+
+      const filteredCategories = categories.filter(c => c.type === type);
+
+      useEffect(() => {
+        if (!editData || editData.type !== type) {
+          if (filteredCategories.length > 0) {
+            setCategoryId(filteredCategories[0].id);
+          } else {
+            setCategoryId('');
+          }
+        }
+      }, [type, categories]);
+
+      useEffect(() => {
+        if (type === 'income') return;
+        const numAmount = parseFloat(amount) || 0;
+        if (numAmount === 0 || splits.length === 0) return;
+
+        let lockedSum = 0;
+        let unlockedCount = 0;
+        splits.forEach(s => {
+          if (s.locked) lockedSum += parseFloat(s.amount) || 0;
+          else unlockedCount++;
+        });
+
+        const remaining = numAmount - lockedSum;
+        
+        if (unlockedCount > 0) {
+          const splitAmount = remaining / unlockedCount;
+          setSplits(prev => prev.map(s => {
+            if (!s.locked) {
+              return { ...s, amount: parseFloat(splitAmount.toFixed(2)) };
+            }
+            return s;
+          }));
+        }
+      }, [amount, splits.length, type]); 
+
+      const handleSplitManualChange = (index, val) => {
+        const numAmount = parseFloat(amount) || 0;
+        const newVal = parseFloat(val) || 0;
+        
+        setSplits(prev => {
+          const newSplits = [...prev];
+          newSplits[index].amount = newVal;
+          newSplits[index].locked = true;
+
+          let lockedSum = 0;
+          let unlockedCount = 0;
+          newSplits.forEach(s => {
+            if (s.locked) lockedSum += parseFloat(s.amount) || 0;
+            else unlockedCount++;
+          });
+
+          const remaining = numAmount - lockedSum;
+          if (unlockedCount > 0) {
+            const splitAmount = remaining / unlockedCount;
+            newSplits.forEach(s => {
+              if (!s.locked) s.amount = parseFloat(splitAmount.toFixed(2));
+            });
+          }
+
+          return newSplits;
+        });
+      };
+
+      const toggleLock = (index) => {
+        setSplits(prev => {
+          const newSplits = [...prev];
+          newSplits[index].locked = !newSplits[index].locked;
+          return newSplits;
+        });
+        const numAmount = parseFloat(amount) || 0;
+        setTimeout(() => setAmount(numAmount.toString() + ' '), 0); 
+        setTimeout(() => setAmount(numAmount.toString()), 10);
+      };
+
+      const addPerson = () => {
+        if (!newPersonName.trim()) return;
+        if (splits.some(s => s.name.toLowerCase() === newPersonName.toLowerCase()) || newPersonName.trim().toLowerCase() === 'me') {
+          setError("Person already added or invalid name");
+          return;
+        }
+        setSplits(prev => [...prev, { name: newPersonName.trim(), amount: 0, locked: false, paid: 0 }]);
+        setNewPersonName('');
+        setError('');
+      };
+
+      const removePerson = (index) => {
+        setSplits(prev => prev.filter((_, i) => i !== index));
+        const numAmount = parseFloat(amount) || 0;
+        setTimeout(() => setAmount(numAmount.toString() + ' '), 0); 
+        setTimeout(() => setAmount(numAmount.toString()), 10);
+      };
+
+      const saveTransaction = async () => {
+        setError('');
+        const numAmount = parseFloat(amount);
+        if (!numAmount || numAmount <= 0) return setError('Enter a valid amount');
+        if (!accountId) return setError('Please select an account');
+        if (!categoryId) return setError('Please select a category');
+
+        if (type === 'expense') {
+          const splitsTotal = splits.reduce((acc, s) => acc + (parseFloat(s.amount) || 0), 0);
+          if (Math.abs(splitsTotal - numAmount) > 0.1) {
+            return setError(`Split total (${splitsTotal}) doesn't match total amount (${numAmount})`);
+          }
+        }
+
+        const payload = {
+          type,
+          amount: numAmount,
+          categoryId,
+          accountId,
+          date: new Date(date).toISOString(),
+          note,
+          splits: type === 'expense' ? splits.map(s => ({ ...s, amount: parseFloat(s.amount) || 0 })) : []
+        };
+
+        try {
+          if (editData) {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', editData.id), payload);
+          } else {
+            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), payload);
+          }
+          onSave();
+        } catch (err) {
+          setError('Error saving: ' + err.message);
+        }
+      };
+
+      const deleteTx = async () => {
+        if (window.confirm("Are you sure you want to delete this entry?")) {
+          await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', editData.id));
+          onSave();
+        }
+      };
+
+      return (
+        <div className="space-y-5 animate-fade-in">
+          
+          <div className="flex bg-[#2c2c2e]/50 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 shadow-inner">
+            <button 
+              className={`flex-1 py-2.5 rounded-xl text-sm font-extrabold transition-all ${type === 'expense' ? 'bg-[#3a3a3c] shadow-sm text-white border border-white/10' : 'text-gray-400 hover:text-gray-200'}`}
+              onClick={() => setType('expense')}
+            >Expense</button>
+            <button 
+              className={`flex-1 py-2.5 rounded-xl text-sm font-extrabold transition-all ${type === 'income' ? 'bg-[#3a3a3c] shadow-sm text-emerald-400 border border-white/10' : 'text-gray-400 hover:text-gray-200'}`}
+              onClick={() => setType('income')}
+            >Income</button>
+          </div>
+
+          <GlassCard className="flex items-center gap-4">
+            <div className={`text-4xl font-black ${type === 'income' ? 'text-emerald-500' : 'text-gray-500'}`}>₹</div>
+            <input 
+              type="number" 
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="0.00"
+              className={`bg-transparent text-5xl font-black focus:outline-none w-full placeholder-gray-600 ${type === 'income' ? 'text-emerald-400' : 'text-white'}`}
+            />
+          </GlassCard>
+
+          <GlassCard className="space-y-4">
+            <div>
+              <label className="text-[10px] font-extrabold text-gray-500 uppercase ml-1 tracking-widest">Note / Description</label>
+              <GlassInput value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Dinner, Salary, etc." />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-extrabold text-gray-500 uppercase ml-1 tracking-widest">Category</label>
+                <GlassSelect value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+                  {filteredCategories.length === 0 && <option value="">No categories</option>}
+                  {filteredCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </GlassSelect>
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold text-gray-500 uppercase ml-1 tracking-widest">Account</label>
+                <GlassSelect value={accountId} onChange={e => setAccountId(e.target.value)}>
+                  {accounts.length === 0 && <option value="">Add account first</option>}
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </GlassSelect>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-extrabold text-gray-500 uppercase ml-1 tracking-widest">Date & Time</label>
+              <GlassInput type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+            </div>
+          </GlassCard>
+
+          {type === 'expense' && (
+            <GlassCard className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-extrabold text-white flex items-center gap-2"><Users size={18} className="text-blue-400" /> Split Expense</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {splits.map((s, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-[#2c2c2e]/60 p-2 rounded-xl border border-white/5 shadow-inner">
+                    <span className="font-bold text-gray-200 w-24 truncate px-2">{s.name === 'Me' ? `${user.displayName || 'Me'} (You)` : s.name}</span>
+                    <div className="flex-1 flex items-center bg-[#3a3a3c]/60 rounded-lg px-2 border border-white/5">
+                      <span className="text-gray-500 font-bold">₹</span>
+                      <input 
+                        type="number"
+                        value={s.amount}
+                        onChange={(e) => handleSplitManualChange(idx, e.target.value)}
+                        className="bg-transparent w-full py-2 px-1 focus:outline-none font-bold text-white"
+                      />
+                    </div>
+                    <button onClick={() => toggleLock(idx)} className={`p-2 rounded-lg transition-all border ${s.locked ? 'bg-blue-600 text-white border-blue-500 shadow-md' : 'bg-[#3a3a3c] text-gray-400 border-white/10 hover:bg-[#4a4a4c]'}`}>
+                      {s.locked ? <CheckCircle2 size={16} /> : <Edit2 size={16} />}
+                    </button>
+                    {s.name !== 'Me' && (
+                      <button onClick={() => removePerson(idx)} className="p-2 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition border border-red-500/20"><X size={16}/></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={newPersonName} 
+                  onChange={e => setNewPersonName(e.target.value)} 
+                  placeholder="Friend's Name" 
+                  className="flex-1 bg-[#2c2c2e]/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 ring-blue-500 text-sm font-bold shadow-inner placeholder-gray-500 text-white"
+                  list="known-persons"
+                />
+                <datalist id="known-persons">
+                  {knownPersons.map(p => <option key={p} value={p} />)}
+                </datalist>
+                <button onClick={addPerson} className="bg-blue-600 border border-blue-500 hover:bg-blue-500 transition text-white px-4 py-2 rounded-xl font-bold shadow-md">+</button>
+              </div>
+            </GlassCard>
+          )}
+
+          {error && <div className="bg-red-500/20 text-red-400 p-3 rounded-2xl text-sm font-bold border border-red-500/30">{error}</div>}
+
+          <div className="flex gap-3 pt-2">
+            <GlassButton variant="secondary" onClick={onCancel}>Cancel</GlassButton>
+            {editData && <GlassButton variant="danger" onClick={deleteTx}>Delete</GlassButton>}
+            <GlassButton variant="primary" onClick={saveTransaction}>{editData ? 'Update' : 'Save'}</GlassButton>
+          </div>
+        </div>
+      );
+    }
+
+    //    function SplitsView({ user, transactions }) {
+      const [selectedPerson, setSelectedPerson] = useState(null);
+
+      const balances = useMemo(() => {
+        const data = {};
+        transactions.forEach(exp => {
+          if (exp.type !== 'expense' || !exp.splits) return;
+          
+          exp.splits.forEach(s => {
+            if (s.name === 'Me') return;
+            
+            const amountOwed = (parseFloat(s.amount) || 0) - (parseFloat(s.paid) || 0);
+            if (amountOwed > 0) {
+              if (!data[s.name]) data[s.name] = { total: 0, transactions: [] };
+              data[s.name].total += amountOwed;
+              data[s.name].transactions.push({ ...exp, amountOwed });
+            }
+          });
+        });
+        return data;
+      }, [transactions]);
+
+      const handleMarkPaid = async (expId, personName, amountReceived) => {
+        const exp = transactions.find(e => e.id === expId);
+        if (!exp) return;
+
+        const newSplits = exp.splits.map(s => {
+          if (s.name === personName) {
+            return { ...s, paid: (s.paid || 0) + parseFloat(amountReceived) };
+          }
+          return s;
+        });
+
+        try {
+          await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', expId), { splits: newSplits });
+        } catch (err) {
+          console.error(err);
+          alert("Error updating payment");
+        }
+      };
+
+      if (selectedPerson) {
+        const personData = balances[selectedPerson];
+        if (!personData || personData.total <= 0) {
+          setSelectedPerson(null);
+          return null;
+        }
+
+        return (
+          <div className="space-y-4 animate-slide-in">
+            <div className="flex items-center gap-3 mb-6 cursor-pointer text-gray-400 hover:text-blue-400 transition font-extrabold" onClick={() => setSelectedPerson(null)}>
+              <ChevronRight className="rotate-180" /> <span className="text-sm">Back to All</span>
+            </div>
+
+            <GlassCard className="text-center !bg-[#1c1c1e]/80 !border-blue-500/30 !text-white shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden">
+              <div className="absolute inset-0 bg-blue-500/10 pointer-events-none"></div>
+              <h2 className="text-blue-300 font-extrabold mb-1 text-xs uppercase tracking-widest relative z-10">{selectedPerson} owes you</h2>
+              <div className="text-4xl font-black relative z-10">{formatCurrency(personData.total)}</div>
+            </GlassCard>
+
+            <h3 className="font-extrabold text-white ml-2 mt-6">Pending Transactions</h3>
+            {personData.transactions.map(tx => (
+              <GlassCard key={tx.id} className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-extrabold text-white">{tx.note || 'Expense'}</h4>
+                    <p className="text-xs text-gray-400 font-semibold">{formatDate(tx.date)}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-black text-red-400">{formatCurrency(tx.amountOwed)}</div>
+                    <div className="text-[10px] text-gray-500 font-bold">of total {formatCurrency(tx.amount)}</div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 bg-[#2c2c2e]/60 p-2 rounded-xl border border-white/5 shadow-inner">
+                  <input 
+                    type="number" 
+                    id={`pay_${tx.id}`}
+                    placeholder="Amt Received" 
+                    className="w-full bg-transparent px-2 text-sm font-black focus:outline-none text-white"
+                    defaultValue={tx.amountOwed}
+                  />
+                  <button 
+                    onClick={() => {
+                      const val = document.getElementById(`pay_${tx.id}`).value;
+                      if(val) handleMarkPaid(tx.id, selectedPerson, val);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap hover:bg-blue-500 transition border border-blue-500/50"
+                  >
+                    Mark Paid
+                  </button>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+          <div className="mb-6">
+            <p className="text-gray-400 font-bold text-sm">Track your splits and receivables.</p>
+          </div>
+
+          {Object.keys(balances).length === 0 && (
+            <GlassCard className="text-center py-10">
+              <CheckCircle2 size={48} className="mx-auto text-emerald-400 mb-3" strokeWidth={2.5}/>
+              <h3 className="font-extrabold text-white">All settled up!</h3>
+              <p className="text-sm text-gray-400 font-medium mt-1">No one owes you anything right now.</p>
+            </GlassCard>
+          )}
+
+          {Object.entries(balances).map(([name, data]) => (
+            <GlassCard key={name} className="flex justify-between items-center group cursor-pointer hover:bg-[#2c2c2e]/80 transition-colors" onClick={() => setSelectedPerson(name)}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[#2c2c2e]/80 text-blue-400 rounded-full flex items-center justify-center font-black text-xl uppercase border border-white/10 shadow-sm">
+                  {name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-lg text-white">{name}</h3>
+                  <p className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">{data.transactions.length} pending items</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-black text-red-400 text-lg">{formatCurrency(data.total)}</span>
+                <ChevronRight className="text-gray-600 group-hover:text-blue-400 transition-colors" />
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      );
+    }
+
+    //    function ProfileView({ user, accounts, categories, profilePhoto, handlePhotoUpload, updateUserName }) {
+      const [newAccName, setNewAccName] = useState('');
+      const [newAccBalance, setNewAccBalance] = useState('');
+      const [newCatName, setNewCatName] = useState('');
+      const [newCatType, setNewCatType] = useState('expense');
+      
+      const [isEditingName, setIsEditingName] = useState(false);
+      const [editNameValue, setEditNameValue] = useState(user.displayName || '');
+
+      const handleNameSave = () => {
+        updateUserName(editNameValue);
+        setIsEditingName(false);
+      };
+
+      const addAccount = async () => {
+        if (!newAccName.trim()) return;
+        try {
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'accounts'), {
+            name: newAccName.trim(),
+            openingBalance: parseFloat(newAccBalance) || 0,
+            createdAt: new Date().toISOString()
+          });
+          setNewAccName('');
+          setNewAccBalance('');
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const delAccount = async (id) => {
+        if(window.confirm('Delete this account? Expenses linked to this account will appear with no account assigned.')){
+          await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'accounts', id));
+        }
+      };
+
+      const addCategory = async () => {
+        if (!newCatName.trim()) return;
+        try {
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'categories'), {
+            name: newCatName.trim(),
+            type: newCatType,
+            icon: newCatType === 'expense' ? '🏷️' : '💵',
+            color: newCatType === 'expense' ? 'bg-orange-500' : 'bg-emerald-500'
+          });
+          setNewCatName('');
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const delCategory = async (id) => {
+        if(window.confirm('Delete this category?')){
+          await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'categories', id));
+        }
+      };
+
+      const handleLogout = () => {
+        if (window.confirm("Are you sure you want to log out?")) {
+          signOut(auth);
+        }
+      };
+
+      return (
+        <div className="space-y-6">
+          <GlassCard className="text-center pt-8 pb-6">
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#2c2c2e] shadow-lg bg-[#1c1c1e]">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <Users className="w-full h-full text-gray-500 p-5" strokeWidth={1.5}/>
+                )}
+              </div>
+              <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2.5 rounded-full cursor-pointer shadow-lg hover:scale-110 transition border-2 border-[#1c1c1e]">
+                <Upload size={14} strokeWidth={3}/>
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              </label>
+            </div>
+            
+            {isEditingName ? (
+              <div className="flex items-center justify-center gap-2 mt-4 max-w-[250px] mx-auto">
+                <GlassInput 
+                  autoFocus
+                  value={editNameValue} 
+                  onChange={e => setEditNameValue(e.target.value)} 
+                  className="py-2 text-center" 
+                  placeholder="Your Name"
+                />
+                <button onClick={handleNameSave} className="bg-emerald-600 text-white p-2 rounded-xl shadow-sm hover:bg-emerald-500"><Check size={20}/></button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 mt-4 cursor-pointer group" onClick={() => setIsEditingName(true)}>
+                <h2 className="text-2xl font-black text-white group-hover:text-blue-400 transition">{user.displayName || 'User'}</h2>
+                <Edit2 size={16} className="text-gray-500 opacity-0 group-hover:opacity-100 transition" />
+              </div>
+            )}
+            
+            <p className="text-sm text-gray-400 font-bold mt-1">{user.email}</p>
+            
+            <button onClick={handleLogout} className="mt-5 flex items-center gap-2 text-red-400 bg-red-500/10 px-5 py-2.5 rounded-xl mx-auto font-extrabold text-sm hover:bg-red-500/20 transition border border-red-500/20">
+              <LogOut size={16} strokeWidth={3}/> Logout
+            </button>
+          </GlassCard>
+
+          <div>
+            <h3 className="font-extrabold text-white text-sm ml-2 mb-3">Bank Accounts & Wallets</h3>
+            <GlassCard className="space-y-4">
+              {accounts.map(acc => (
+                <div key={acc.id} className="flex justify-between items-center bg-[#2c2c2e]/60 p-3 rounded-xl border border-white/10 shadow-sm">
+                  <div>
+                    <span className="font-bold text-gray-200 flex items-center gap-2 text-sm">
+                      <CreditCard size={18} className="text-blue-400" strokeWidth={2.5}/> {acc.name}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-500 ml-6 uppercase tracking-wider">Initial: {formatCurrency(acc.openingBalance || 0)}</span>
+                  </div>
+                  <button onClick={() => delAccount(acc.id)} className="text-red-400 p-1.5 hover:bg-red-500/20 rounded-lg transition border border-transparent hover:border-red-500/30">
+                    <X size={14} strokeWidth={3}/>
+                  </button>
+                </div>
+              ))}
+              
+              <div className="flex flex-col gap-3 mt-2">
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={newAccName} 
+                    onChange={e => setNewAccName(e.target.value)} 
+                    placeholder="E.g. HDFC Bank"
+                    className="flex-[2] bg-[#2c2c2e]/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ring-blue-500 font-bold text-sm shadow-inner text-white placeholder-gray-500"
+                  />
+                  <input 
+                    type="number" 
+                    value={newAccBalance} 
+                    onChange={e => setNewAccBalance(e.target.value)} 
+                    placeholder="₹ Bal."
+                    className="flex-[1] bg-[#2c2c2e]/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ring-blue-500 font-bold text-sm shadow-inner text-white placeholder-gray-500"
+                  />
+                </div>
+                <button onClick={addAccount} className="w-full bg-blue-600 hover:bg-blue-500 transition text-white px-4 py-3 rounded-xl font-bold text-sm border border-blue-500/50 shadow-sm mt-1">Add Account</button>
+              </div>
+            </GlassCard>
+          </div>
+
+          <div>
+            <h3 className="font-extrabold text-white text-sm ml-2 mb-3">Manage Categories</h3>
+            <GlassCard className="space-y-4">
+              <div className="max-h-48 overflow-y-auto space-y-2 pr-2 hide-scrollbar">
+                {categories.map(cat => (
+                  <div key={cat.id} className="flex justify-between items-center bg-[#2c2c2e]/60 p-2.5 rounded-xl border border-white/5 shadow-sm">
+                    <span className="font-bold text-gray-200 flex items-center gap-2 text-sm">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm ${cat.color}`}>{cat.icon}</span> 
+                      {cat.name}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[9px] font-extrabold uppercase tracking-widest ${cat.type === 'income' ? 'text-emerald-400' : 'text-gray-500'}`}>{cat.type}</span>
+                      <button onClick={() => delCategory(cat.id)} className="text-red-400 p-1.5 hover:bg-red-500/20 rounded-lg transition"><X size={14} strokeWidth={3}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-2 mt-2 flex-col sm:flex-row">
+                <div className="flex gap-2 flex-1">
+                  <select 
+                    value={newCatType} 
+                    onChange={e => setNewCatType(e.target.value)}
+                    className="bg-[#2c2c2e]/60 border border-white/10 shadow-inner rounded-xl px-3 py-3 focus:outline-none focus:ring-2 ring-blue-500 text-sm font-bold text-white appearance-none text-center"
+                  >
+                    <option value="expense">Exp</option>
+                    <option value="income">Inc</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    value={newCatName} 
+                    onChange={e => setNewCatName(e.target.value)} 
+                    placeholder="New Category..."
+                    className="flex-1 bg-[#2c2c2e]/60 border border-white/10 shadow-inner rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ring-blue-500 font-bold text-sm text-white placeholder-gray-500"
+                  />
+                </div>
+                <button onClick={addCategory} className="bg-blue-600 hover:bg-blue-500 transition text-white px-4 py-3 rounded-xl font-bold text-sm border border-blue-500/50 shadow-sm sm:w-auto w-full flex items-center justify-center">Add</button>
+              </div>
+            </GlassCard>
+          </div>
+        </div>
+      );
+    }
+
+    //    function AuthScreen({ setUser }) {
+      const [isLogin, setIsLogin] = useState(true);
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
-      const [isLogin, setIsLogin] = useState(true);
+      const [name, setName] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
 
       const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setLoading(true);
         try {
           if (isLogin) {
             await signInWithEmailAndPassword(auth, email, password);
           } else {
-            await createUserWithEmailAndPassword(auth, email, password);
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(cred.user, { displayName: name });
+            setUser({ ...cred.user, displayName: name });
           }
-        } catch (err) { alert(err.message); }
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
       };
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 bg-[#1c1c1e] p-8 rounded-3xl">
-            <h2 className="text-2xl font-bold text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
-            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
-            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-            <button className="w-full bg-blue-600 p-3 rounded-xl font-bold">{isLogin ? 'Sign In' : 'Sign Up'}</button>
-          </form>
+        <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden selection:bg-blue-500/30">
+          
+          <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full filter blur-[100px] opacity-80"></div>
+          <div className="fixed bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-600/20 rounded-full filter blur-[100px] opacity-80"></div>
+
+          <div className="w-full max-w-sm z-10">
+            <div className="text-center mb-10">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[1.5rem] mx-auto flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.4)] mb-5 rotate-12 border border-white/10">
+                <Wallet className="w-10 h-10 text-white -rotate-12" strokeWidth={2.5} />
+              </div>
+              <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">LiquidTrack</h1>
+              <p className="text-gray-400 font-bold mt-1 text-sm">Smart tracking & splitting.</p>
+            </div>
+
+            <GlassCard className="!p-8 !rounded-[2rem]">
+              <h2 className="text-xl font-extrabold text-white mb-6 text-center">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {!isLogin && (
+                  <GlassInput 
+                    type="text" 
+                    placeholder="Your Name" 
+                    value={name} 
+                    onChange={e => setName(e.target.value)} 
+                    required 
+                  />
+                )}
+                <GlassInput 
+                  type="email" 
+                  placeholder="Email" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required 
+                />
+                <GlassInput 
+                  type="password" 
+                  placeholder="Password" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  required 
+                />
+                
+                {error && <p className="text-red-400 text-xs font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/30 text-center">{error}</p>}
+                
+                <GlassButton type="submit" disabled={loading} className="mt-2 text-lg">
+                  {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                </GlassButton>
+              </form>
+
+              <div className="mt-6 text-center space-y-5">
+                <button 
+                  onClick={() => {setIsLogin(!isLogin); setError('');}} 
+                  className="text-sm font-extrabold text-blue-400 hover:text-blue-300 transition"
+                >
+                  {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                </button>
+              </div>
+            </GlassCard>
+          </div>
         </div>
       );
     }
 
-    const root = createRoot(document.getElementById('root'));
+    //    const root = createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
 </body>
