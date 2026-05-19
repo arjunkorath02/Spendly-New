@@ -3,43 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spendly</title>
+  <title>Liquid Expense Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react",
-        "firebase/app": "https://esm.sh/firebase@10.8.1/app",
-        "firebase/auth": "https://esm.sh/firebase@10.8.1/auth",
-        "firebase/firestore": "https://esm.sh/firebase@10.8.1/firestore"
-      }
-    }
-  </script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body { background-color: #000; color: #fff; }
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
 </head>
-<body>
+<body class="bg-black text-white min-h-screen">
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useMemo } from 'react';
+    import React, { useState, useEffect } from 'react';
     import { createRoot } from 'react-dom/client';
-    import { 
-      Home, Users, Settings, Plus, CreditCard, ChevronRight, CheckCircle2, 
-      Upload, X, Edit2, Wallet, LogOut, TrendingUp, 
-      ArrowDownRight, ArrowUpRight, BarChart2, TrendingDown, Filter, Check, Calendar
-    } from 'lucide-react';
-    import { initializeApp } from 'firebase/app';
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
-    import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, updateDoc, addDoc } from 'firebase/firestore';
+    
+    
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
+    import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
 
-    // REPLACE WITH YOUR FIREBASE KEYS
+    const firebaseConfig = {
+      <!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liquid Expense Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-black text-white min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from 'react';
+    import { createRoot } from 'react-dom/client';
+    
+   
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
+    import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+
+   
     const firebaseConfig = {
       apiKey: "AIzaSyAFcVpBt3e4sX_NbwzSFmdw2DzAYDlTSpY",
       authDomain: "spendly-2ddbb.firebaseapp.com",
@@ -49,61 +51,32 @@
       appId: "1:1026678550362:web:a7216ecdfcb12c08ffcd63"
     };
 
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const appId = 'liquid-expense-tracker';
 
-    const DEFAULT_CATEGORIES = [
-      { name: 'Food', icon: '🍔', color: 'bg-orange-500', type: 'expense' },
-      { name: 'Salary', icon: '💰', color: 'bg-emerald-500', type: 'income' }
-    ];
-
-    const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
-
-    // Main App Component
     function App() {
       const [user, setUser] = useState(null);
       const [loading, setLoading] = useState(true);
-      const [view, setView] = useState('home');
-      const [transactions, setTransactions] = useState([]);
-      const [accounts, setAccounts] = useState([]);
-      
-      useEffect(() => {
-        onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
-      }, []);
 
       useEffect(() => {
-        if (!user) return;
-        const unsubTx = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), (snap) => {
-          setTransactions(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+        const unsub = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          setLoading(false);
         });
-        const unsubAcc = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'accounts'), (snap) => {
-          setAccounts(snap.docs.map(d => ({ ...d.data(), id: d.id })));
-        });
-        return () => { unsubTx(); unsubAcc(); };
-      }, [user]);
+        return unsub;
+      }, []);
 
       if (loading) return <div className="p-10 text-center">Loading...</div>;
       if (!user) return <AuthScreen setUser={setUser} />;
 
       return (
-        <div className="min-h-screen bg-black text-white p-4 max-w-lg mx-auto pb-32">
-          <header className="mb-6 pt-4 flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-black">LiquidTrack</h1>
-              <p className="text-gray-400">Hello, {user.displayName || 'User'}</p>
-            </div>
-          </header>
-          
-          {view === 'home' && <HomeView transactions={transactions} accounts={accounts} />}
-          {view === 'profile' && <ProfileView user={user} accounts={accounts} />}
-          
-          <div className="fixed bottom-6 left-4 right-4 bg-[#1c1c1e]/90 backdrop-blur-2xl border border-white/10 rounded-full px-6 py-4 flex justify-between items-center">
-            <button onClick={() => setView('home')}><Home /></button>
-            <button onClick={() => setView('add')} className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center"><Plus size={28}/></button>
-            <button onClick={() => setView('profile')}><Settings /></button>
-          </div>
+        <div className="p-6 max-w-lg mx-auto">
+          <h1 className="text-3xl font-black mb-4">Dashboard</h1>
+          <p>Logged in as: {user.email}</p>
+          <button className="mt-4 bg-red-600 px-4 py-2 rounded-xl" onClick={() => auth.signOut()}>Logout</button>
         </div>
       );
     }
@@ -111,7 +84,6 @@
     function AuthScreen({ setUser }) {
       const [email, setEmail] = useState('');
       const [password, setPassword] = useState('');
-      const [name, setName] = useState('');
       const [isLogin, setIsLogin] = useState(true);
 
       const handleSubmit = async (e) => {
@@ -120,9 +92,7 @@
           if (isLogin) {
             await signInWithEmailAndPassword(auth, email, password);
           } else {
-            const cred = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(cred.user, { displayName: name });
-            setUser({...cred.user, displayName: name});
+            await createUserWithEmailAndPassword(auth, email, password);
           }
         } catch (err) { alert(err.message); }
       };
@@ -130,57 +100,76 @@
       return (
         <div className="min-h-screen flex items-center justify-center p-4">
           <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 bg-[#1c1c1e] p-8 rounded-3xl">
-            <h2 className="text-2xl font-bold text-center mb-6">{isLogin ? 'Login' : 'Sign Up'}</h2>
-            {!isLogin && <input className="w-full bg-black p-3 rounded-xl" placeholder="Name" onChange={e => setName(e.target.value)} />}
-            <input className="w-full bg-black p-3 rounded-xl" type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
-            <input className="w-full bg-black p-3 rounded-xl" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-            <button className="w-full bg-blue-600 p-3 rounded-xl font-bold">{isLogin ? 'Sign In' : 'Create Account'}</button>
-            <button type="button" className="text-sm w-full text-gray-400" onClick={() => setIsLogin(!isLogin)}>{isLogin ? 'Need an account?' : 'Already have one?'}</button>
+            <h2 className="text-2xl font-bold text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
+            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
+            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+            <button className="w-full bg-blue-600 p-3 rounded-xl font-bold">{isLogin ? 'Sign In' : 'Sign Up'}</button>
           </form>
         </div>
       );
     }
 
-    function HomeView({ transactions, accounts }) {
-      const bal = accounts.reduce((sum, a) => sum + (parseFloat(a.openingBalance) || 0), 0);
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+    };
+
+    // 2. Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = 'liquid-expense-tracker';
+
+    function App() {
+      const [user, setUser] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        const unsub = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          setLoading(false);
+        });
+        return unsub;
+      }, []);
+
+      if (loading) return <div className="p-10 text-center">Loading...</div>;
+      if (!user) return <AuthScreen setUser={setUser} />;
+
       return (
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-900 to-black p-6 rounded-3xl border border-white/10">
-            <h2 className="text-gray-400">Total Balance</h2>
-            <p className="text-4xl font-black">{formatCurrency(bal)}</p>
-          </div>
-          <div className="text-center text-gray-500 italic">Dashboard Content Here...</div>
+        <div className="p-6 max-w-lg mx-auto">
+          <h1 className="text-3xl font-black mb-4">Dashboard</h1>
+          <p>Logged in as: {user.email}</p>
+          <button className="mt-4 bg-red-600 px-4 py-2 rounded-xl" onClick={() => auth.signOut()}>Logout</button>
         </div>
       );
     }
 
-    function ProfileView({ user, accounts }) {
-      const [accName, setAccName] = useState('');
-      const [accBal, setAccBal] = useState('');
+    function AuthScreen({ setUser }) {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [isLogin, setIsLogin] = useState(true);
 
-      const addAccount = async () => {
-        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'accounts'), {
-          name: accName,
-          openingBalance: parseFloat(accBal) || 0
-        });
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          if (isLogin) {
+            await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+          }
+        } catch (err) { alert(err.message); }
       };
 
       return (
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold">Profile & Accounts</h2>
-          <div className="space-y-3">
-            {accounts.map(a => (
-              <div key={a.id} className="flex justify-between bg-[#1c1c1e] p-4 rounded-xl">
-                <span>{a.name} (Bal: {formatCurrency(a.openingBalance)})</span>
-                <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'accounts', a.id))} className="text-red-500">Delete</button>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <input className="bg-[#1c1c1e] p-3 rounded-xl" placeholder="Account Name" onChange={e => setAccName(e.target.value)} />
-            <input className="bg-[#1c1c1e] p-3 rounded-xl" type="number" placeholder="Opening Bal" onChange={e => setAccBal(e.target.value)} />
-          </div>
-          <button className="w-full bg-blue-600 p-3 rounded-xl" onClick={addAccount}>Add Account</button>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 bg-[#1c1c1e] p-8 rounded-3xl">
+            <h2 className="text-2xl font-bold text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
+            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
+            <input className="w-full bg-black p-3 rounded-xl border border-white/10" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+            <button className="w-full bg-blue-600 p-3 rounded-xl font-bold">{isLogin ? 'Sign In' : 'Sign Up'}</button>
+          </form>
         </div>
       );
     }
